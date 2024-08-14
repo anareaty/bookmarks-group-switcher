@@ -6,3 +6,23 @@ available in the app when your plugin is enabled.
 If your plugin does not need CSS, delete this file.
 
 */
+
+.hide-bookmarks-group {
+    display: none;
+  }
+  
+  .bookmarks-group-outer > .tree-item-self {
+    display: none;
+  }
+  
+  
+  .selected-bookmarks-group > .tree-item-self {
+    --nav-item-weight-hover: bold;
+    --nav-item-weight: bold;
+  }
+  
+  .bookmarks-group-outer > .tree-item-children {
+    margin-left: 0;
+    padding-left: 0;
+    border-left: none;
+  }

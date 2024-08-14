@@ -1,13 +1,13 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, SuggestModal, setIcon, Setting } from 'obsidian';
 
 // Remember to rename these classes and interfaces!
 
 interface MyPluginSettings {
-	mySetting: string;
+	selectedGroupName: string;
 }
 
 const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default'
+	selectedGroupName: '-'
 }
 
 export default class MyPlugin extends Plugin {
@@ -16,70 +16,291 @@ export default class MyPlugin extends Plugin {
 	async onload() {
 		await this.loadSettings();
 
-		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('dice', 'Sample Plugin', (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
-		});
-		// Perform additional things with the ribbon
-		ribbonIconEl.addClass('my-plugin-ribbon-class');
+		this.app.workspace.onLayoutReady(async () => {
+			let leaf = this.app.workspace.getLeavesOfType("bookmarks")[0]
+			
+			let navButtonsContainer = leaf.view.containerEl.firstChild?.firstChild
 
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status Bar Text');
+			if (navButtonsContainer) {
+				// @ts-ignore
+				let groupSelectButtonNode = Array.from(navButtonsContainer.childNodes).find(n => n.classList.contains("select-group-icon"))
 
-		// This adds a simple command that can be triggered anywhere
-		this.addCommand({
-			id: 'open-sample-modal-simple',
-			name: 'Open sample modal (simple)',
-			callback: () => {
-				new SampleModal(this.app).open();
-			}
-		});
-		// This adds an editor command that can perform some operation on the current editor instance
-		this.addCommand({
-			id: 'sample-editor-command',
-			name: 'Sample editor command',
-			editorCallback: (editor: Editor, view: MarkdownView) => {
-				console.log(editor.getSelection());
-				editor.replaceSelection('Sample Editor Command');
-			}
-		});
-		// This adds a complex command that can check whether the current state of the app allows execution of the command
-		this.addCommand({
-			id: 'open-sample-modal-complex',
-			name: 'Open sample modal (complex)',
-			checkCallback: (checking: boolean) => {
-				// Conditions to check
-				const markdownView = this.app.workspace.getActiveViewOfType(MarkdownView);
-				if (markdownView) {
-					// If checking is true, we're simply "checking" if the command can be run.
-					// If checking is false, then we want to actually perform the operation.
-					if (!checking) {
-						new SampleModal(this.app).open();
-					}
+				if (!groupSelectButtonNode) {
+					let groupSelectButton = navButtonsContainer?.createEl("div", { text: "", cls: "clickable-icon nav-action-button select-group-icon" })
+					setIcon(groupSelectButton, "list")
 
-					// This command will only show up in Command Palette when the check function returns true
-					return true;
+					this.registerDomEvent(groupSelectButton, 'click', async () => {
+						await this.selectBookmarksGroup()
+					});
+				}
+
+				// @ts-ignore
+				let plusButtonNode = Array.from(navButtonsContainer.childNodes).find(n => n.classList.contains("bookmark-plus-icon"))
+
+				if (!plusButtonNode) {
+					let groupSelectButton = navButtonsContainer?.createEl("div", { text: "", cls: "clickable-icon nav-action-button bookmark-plus-icon" })
+					setIcon(groupSelectButton, "plus")
+
+					this.registerDomEvent(groupSelectButton, 'click', async () => {
+						await this.addNoteForGroup()
+					});
 				}
 			}
-		});
 
-		// This adds a settings tab so the user can configure various aspects of the plugin
-		this.addSettingTab(new SampleSettingTab(this.app, this));
+			setTimeout(async() => {
+				await this.changeGroup()
+			}, 100);
 
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			console.log('click', evt);
-		});
 
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+
+
+			this.registerEvent(
+				this.app.workspace.on("active-leaf-change", async () => {
+
+					setTimeout(async() => {
+						await this.changeGroup()
+					}, 100);
+					
+				})
+			);
+			
+		})
 	}
 
-	onunload() {
+	onunload() {}
 
+
+
+	async addNoteForGroup() {
+		await this.loadSettings()
+		let selectedGroupName = this.settings.selectedGroupName
+
+		// @ts-ignore
+		let noteFolder = this.app.vault.config.newFileFolderPath
+		if (!noteFolder) noteFolder = ""
+		let noteName = "New note"
+
+		const checkIfExist = (num: number) => {
+			let numString = ""
+			if (num > 0) {numString = " " + num}
+			let path = noteName + numString + ".md"
+	
+			if (noteFolder && noteFolder != "") {
+				path = noteFolder + "/" + noteName + numString + ".md"
+			}
+	
+			// @ts-ignore
+			let checkPath = this.app.vault.getAbstractFileByPathInsensitive(path)
+
+	
+			if (checkPath) {
+				return checkIfExist(num + 1)
+			} else return path
+		}
+
+		let path = checkIfExist(0)
+
+
+
+
+
+		await this.app.vault.create(path, "")
+
+		let fileObj = {
+			type: "file",
+			path: path
+		}
+
+		// @ts-ignore
+		let instance = this.app.internalPlugins.plugins.bookmarks.instance
+
+		
+
+		
+
+		let groups = this.flattenGroups(instance.items)
+
+		
+		
+
+		let group = groups.find(i => i.parent + i.title == selectedGroupName)
+
+
+		let bookmark
+
+		if (group) {
+			bookmark = group.items.find(i => i.path == path)
+		} else {
+			bookmark = instance.items.find(i => i.path == path)
+		}
+		
+
+		
+
+
+		
+
+		if (!bookmark) {
+			if (group) {
+				await instance.addItem(fileObj, group)
+			} else {
+				await instance.addItem(fileObj)
+			}
+
+		}
+
+
+
+
+
+	}
+
+
+	flattenGroups(arr: any): any {
+		var newArr = [];
+			for (let item of arr) {
+			  if (item.type == "group") {
+				  newArr.push(item)
+				  if (item.items) {
+					  
+					let items = item.items.map((i: any) => {
+					  if (!item.parent) item.parent = ""
+					  i.parent = item.parent + item.title + "/"
+					  return i
+					})
+					newArr = newArr.concat(this.flattenGroups(items))
+				  }
+			  }
+			}
+			return newArr;
+	}
+
+
+	async selectBookmarksGroup() {
+
+
+		// @ts-ignore
+		let groups = this.app.internalPlugins.plugins.bookmarks.instance.items
+
+		groups = this.flattenGroups(groups)
+		groups = groups.map((g:any) => {
+			const getPath = (g:any) => {
+				let title = g.parent + g.title
+				return title
+			}
+			return getPath(g)
+		})
+		
+		groups.unshift("-")
+	
+		let groupNames = groups.map((group: any) => {
+			group = group.replaceAll(/(.*?\/)/g, "    ")
+			return group
+		})
+
+		class ExampleModal extends SuggestModal<string> {
+			getSuggestions(query: string): string[] {
+			  return groups
+			}
+		  
+			renderSuggestion(item: string, el: HTMLElement) {
+			  let itemName = groupNames[groups.indexOf(item)]
+			  el.createEl("div", { text: itemName });
+			}
+		  
+			async onChooseSuggestion(item: string, evt: MouseEvent | KeyboardEvent) {
+			  await saveGroupName(item)
+			  await changeGroup()
+			}
+		  }
+
+		  new ExampleModal(this.app).open()
+
+		  const saveGroupName = async (selectedGroupName: string) => {
+			this.settings.selectedGroupName = selectedGroupName
+			await this.saveSettings();
+		  }
+
+		  const changeGroup = async () => {
+			await this.changeGroup()
+		  }
+	}
+
+
+	async changeGroup() {
+
+		await this.loadSettings()
+		let selectedGroupName = this.settings.selectedGroupName
+		let outerGroups = selectedGroupName.split("/")
+		outerGroups.pop()
+		let outerGroupsPaths = []
+		let path = selectedGroupName
+		for (let group of outerGroups) {
+		  path = path.replace(/(.*)(\/[^/]+)/, "$1")
+		  outerGroupsPaths.push(path)
+		}
+		outerGroupsPaths.reverse()
+
+		for (let path of outerGroupsPaths) {
+			let selector = document.querySelector("[data-path='" + path + "']")
+			if (selector && selector.classList.contains("is-collapsed")) {
+				let selectorInner = selector.querySelector(".tree-item-self")
+
+				// @ts-ignore
+				selectorInner.click()
+			}
+		}
+
+
+		let groupSelectors = document.querySelectorAll(".workspace-leaf-content[data-type='bookmarks'] > div > div .tree-item") 
+
+
+		groupSelectors.forEach(groupSelector => {
+		  let groupName: string = groupSelector.getAttribute("data-path") ?? ""
+	
+		  if (!selectedGroupName.startsWith(groupName) && !groupName.startsWith(selectedGroupName)) {
+			groupSelector.classList.add("hide-bookmarks-group")
+		  } else {
+			groupSelector.classList.remove("hide-bookmarks-group")
+		  }
+	
+		  if (groupName == selectedGroupName) {
+	
+			groupSelector.classList.add("selected-bookmarks-group")
+			groupSelector.classList.remove("hide-bookmarks-group")
+			groupSelector.classList.remove("bookmarks-group-outer")
+			groupSelector.classList.remove("bookmarks-group-inner")
+	
+		  } else if (selectedGroupName.startsWith(groupName)) {
+	
+			groupSelector.classList.add("bookmarks-group-outer")
+			groupSelector.classList.remove("hide-bookmarks-group")
+			groupSelector.classList.remove("selected-bookmarks-group")
+			groupSelector.classList.remove("bookmarks-group-inner")
+			
+		  } else if (groupName.startsWith(selectedGroupName)) {
+	
+			groupSelector.classList.add("bookmarks-group-inner")
+			groupSelector.classList.remove("hide-bookmarks-group")
+			groupSelector.classList.remove("bookmarks-group-outer")
+			groupSelector.classList.remove("selected-bookmarks-group")
+	
+		  } else if (selectedGroupName == "-") {
+	
+			groupSelector.classList.remove("hide-bookmarks-group")
+			groupSelector.classList.remove("bookmarks-group-outer")
+			groupSelector.classList.remove("bookmarks-group-inner")
+			groupSelector.classList.remove("selected-bookmarks-group")
+	
+		  } else {
+	
+			groupSelector.classList.add("hide-bookmarks-group")
+			groupSelector.classList.remove("bookmarks-group-outer")
+			groupSelector.classList.remove("bookmarks-group-inner")
+			groupSelector.classList.remove("selected-bookmarks-group")
+	
+		  }	
+		});
 	}
 
 	async loadSettings() {
@@ -91,44 +312,11 @@ export default class MyPlugin extends Plugin {
 	}
 }
 
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
 
-	onOpen() {
-		const {contentEl} = this;
-		contentEl.setText('Woah!');
-	}
 
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
-	}
-}
 
-class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
 
-	constructor(app: App, plugin: MyPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
 
-	display(): void {
-		const {containerEl} = this;
 
-		containerEl.empty();
 
-		new Setting(containerEl)
-			.setName('Setting #1')
-			.setDesc('It\'s a secret')
-			.addText(text => text
-				.setPlaceholder('Enter your secret')
-				.setValue(this.plugin.settings.mySetting)
-				.onChange(async (value) => {
-					this.plugin.settings.mySetting = value;
-					await this.plugin.saveSettings();
-				}));
-	}
-}
+
