@@ -80,7 +80,7 @@ export default class MyPlugin extends Plugin {
 		if (!noteFolder) noteFolder = ""
 		let noteName = "New note"
 
-		const checkIfExist = (num: number) => {
+		const checkIfExist: any = (num: number) => {
 			let numString = ""
 			if (num > 0) {numString = " " + num}
 			let path = noteName + numString + ".md"
@@ -123,15 +123,15 @@ export default class MyPlugin extends Plugin {
 		
 		
 
-		let group = groups.find(i => i.parent + i.title == selectedGroupName)
+		let group = groups.find((i: any) => i.parent + i.title == selectedGroupName)
 
 
 		let bookmark
 
 		if (group) {
-			bookmark = group.items.find(i => i.path == path)
+			bookmark = group.items.find((i: any) => i.path == path)
 		} else {
-			bookmark = instance.items.find(i => i.path == path)
+			bookmark = instance.items.find((i: any) => i.path == path)
 		}
 		
 
