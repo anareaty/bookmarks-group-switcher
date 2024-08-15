@@ -178,7 +178,7 @@ export default class MyPlugin extends Plugin {
 		let noteName = "New note"
 		let path = this.checkIfExist(0, noteName, noteFolder)
 		let file: TFile = await this.app.vault.create(path, "")
-		await app.workspace.getLeaf().openFile(file)
+		await this.app.workspace.getLeaf().openFile(file)
 		let group = this.getBookmarkGroupByName(selectedGroupName)
 		await this.addFileToBoolmarkGroup(file, group)
 	}
