@@ -11,8 +11,16 @@ If your plugin does not need CSS, delete this file.
     display: none;
   }
   
-  .bookmarks-group-outer > .tree-item-self {
+  .bookmarks-group-outer:has(.selected-bookmarks-group) > .tree-item-self {
     display: none;
+  }
+
+  .bookmarks-group-outer > .tree-item-self {
+    opacity: 0.5;
+  }
+
+  .bookmarks-group-outer > .tree-item-self:hover {
+    opacity: 0.8;
   }
   
   
