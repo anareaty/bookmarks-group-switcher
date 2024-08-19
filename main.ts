@@ -19,6 +19,10 @@ interface MyPluginSettings {
 	linkGroupsToFolders: GroupToFolder[];
 	activeWorkspace: string;
 	workspaceSettings: WorkspaceObject[];
+<<<<<<< HEAD
+=======
+	favoriteFolders: string[];
+>>>>>>> 1480109 (Added favorite folders)
 }
 
 
@@ -26,7 +30,12 @@ interface MyPluginSettings {
 const DEFAULT_SETTINGS: MyPluginSettings = {
 	linkGroupsToFolders: [],
 	activeWorkspace: "",
+<<<<<<< HEAD
 	workspaceSettings: []
+=======
+	workspaceSettings: [],
+	favoriteFolders: []
+>>>>>>> 1480109 (Added favorite folders)
 }
 
 
@@ -86,8 +95,15 @@ class SelectGroupSuggest extends SuggestModal<string> {
 	this.groupNames = groupNames
 	}
 
+<<<<<<< HEAD
 	getSuggestions(): string[] {
 	  return this.groups
+=======
+	getSuggestions(query: string): string[] {
+	  return this.groups.filter((g) => {
+		return g.toLowerCase().includes(query.toLowerCase())
+	});
+>>>>>>> 1480109 (Added favorite folders)
 	}
   
 	renderSuggestion(item: string, el: HTMLElement) {
@@ -108,6 +124,64 @@ class SelectGroupSuggest extends SuggestModal<string> {
 
 
 
+<<<<<<< HEAD
+=======
+  class SelectFolderSuggest extends SuggestModal<string> {
+	plugin: MyPlugin;
+
+	constructor(app: App, plugin: MyPlugin) {
+	super(app);
+	this.plugin = plugin;
+	}
+
+	getSuggestions(query: string): string[] {
+		let favoriteFolders = this.plugin.settings.favoriteFolders
+		let allFolders = this.app.vault.getAllFolders()
+		favoriteFolders = favoriteFolders.filter(fav => {
+			return allFolders.find(fol => fol.path == fav)
+		})
+		this.plugin.settings.favoriteFolders = favoriteFolders
+		this.plugin.saveSettings()
+
+
+		let folders = favoriteFolders.filter((f) => {
+			return f.toLowerCase().includes(query.toLowerCase())
+		});
+		folders.unshift("")
+		return folders;
+	}
+  
+	renderSuggestion(path: string, el: HTMLElement) {
+		let name = path.replace(/(.*\/)([^/]+)/, "$2")
+		if (name == "") name = "-"
+		let wrapper = el.createEl("div", { text: "", cls: "favorite-folder-select" });
+		wrapper.createEl("div", { text: name, cls: "select-name" });
+		wrapper.createEl("div", { text: path, cls: "select-path" });
+	}
+  
+	async onChooseSuggestion(item: string) {
+		await this.plugin.saveActiveFolder(item);
+		if (item == "") {
+		  await this.plugin.unfocusFolder()
+		  let collapseButton = document.querySelector("[data-type='file-explorer'] .nav-buttons-container > div:has(.lucide-chevrons-down-up)")
+		  if (collapseButton) {
+			//@ts-ignore
+			collapseButton.click()
+		  }
+		} else {
+		  await this.plugin.focusFolder(item);
+		}
+	}
+  }
+
+
+
+
+
+
+
+
+>>>>>>> 1480109 (Added favorite folders)
 
 
 
@@ -127,8 +201,17 @@ export default class MyPlugin extends Plugin {
 
 
 		this.app.workspace.onLayoutReady(async () => {
+<<<<<<< HEAD
 			await this.loadSavedFocusStates()
 			await this.addBookmarksButtons()
+=======
+			setTimeout(async() => {
+				await this.loadSavedFocusStates();
+			  }, 100)
+
+			await this.addBookmarksButtons()
+			await this.addFavoriteFoldersButton();
+>>>>>>> 1480109 (Added favorite folders)
 		})
 
 
@@ -159,7 +242,31 @@ export default class MyPlugin extends Plugin {
 							await this.saveActiveFolder(folderPath)
 						})
 					})  
+<<<<<<< HEAD
 				}          
+=======
+				}
+				
+				
+
+
+				if (this.settings.favoriteFolders.find(f => f == folderPath)) {
+					menu.addItem((item) => {
+					  item.setTitle("Remove from favorite").setIcon("heart-off").onClick(async () => {
+						await this.removeFolderFromFavorite(folderPath);
+					  });
+					});
+		  
+				  } else {
+					menu.addItem((item) => {
+					  item.setTitle("Add to favorite").setIcon("heart").onClick(async () => {
+						await this.addFolderToFavorite(folderPath);
+					  });
+					});
+		  
+				  }
+
+>>>>>>> 1480109 (Added favorite folders)
             }
         }))
 
@@ -177,6 +284,10 @@ export default class MyPlugin extends Plugin {
 				this.saveSettings()
 				await this.loadSavedFocusStates()
 				await this.addBookmarksButtons()
+<<<<<<< HEAD
+=======
+				await this.addFavoriteFoldersButton();
+>>>>>>> 1480109 (Added favorite folders)
 			}
 		}));
 
@@ -296,6 +407,45 @@ export default class MyPlugin extends Plugin {
 	}
 
 
+<<<<<<< HEAD
+=======
+
+	async addFavoriteFoldersButton() {
+		let leaf = this.app.workspace.getLeavesOfType("file-explorer")[0];
+		let navButtonsContainer = leaf.view.containerEl.firstChild?.firstChild
+		if (navButtonsContainer) {
+			// @ts-ignore
+			let favoriteFoldersButtonNode = Array.from(navButtonsContainer.childNodes).find((n) => n.classList.contains("favorite-folders-icon"));
+			if (!favoriteFoldersButtonNode) {
+
+			let favoriteFoldersButton = navButtonsContainer?.createEl("div", { text: "", cls: "clickable-icon nav-action-button favorite-folders-icon" })
+			setIcon(favoriteFoldersButton, "folder-heart")
+			this.registerDomEvent(favoriteFoldersButton, "click", async () => {
+				new SelectFolderSuggest(this.app, this).open();
+			});
+			}
+		}
+	}
+
+
+	async addFolderToFavorite(folderPath: string) {
+		let favoriteFolders = this.settings.favoriteFolders
+		if (!favoriteFolders.find(f => f == folderPath)) {
+		  favoriteFolders.push(folderPath)
+		  favoriteFolders.sort()
+		}
+		this.saveSettings()
+	}
+	
+	
+	async removeFolderFromFavorite(folderPath: string) {
+		let favoriteFolders = this.settings.favoriteFolders
+		this.settings.favoriteFolders = favoriteFolders.filter(f => f != folderPath)
+		this.saveSettings()
+	}
+
+
+>>>>>>> 1480109 (Added favorite folders)
 	async loadSavedFocusStates() {
 		let activeGroup = this.getActiveGroup()
 		let activeFolder = this.getActiveFolder()
@@ -376,6 +526,35 @@ export default class MyPlugin extends Plugin {
 
 	async focusFolder(selectedPath: string) {
 
+<<<<<<< HEAD
+=======
+
+
+		/*Expand closed outer folders*/
+
+		let outerFolders = selectedPath.split("/");
+		outerFolders.pop();
+		let outerFoldersPaths = [];
+		let path = selectedPath;
+		for (let group of outerFolders) {
+		  path = path.replace(/(.*)(\/[^/]+)/, "$1");
+		  outerFoldersPaths.push(path);
+		}
+		outerFoldersPaths.reverse().push(selectedPath);
+	
+		for (let path of outerFoldersPaths) {
+		  let selector = document.querySelector("[data-path='" + path + "']:has(> .tree-item-icon.is-collapsed)");
+		  if (selector) {
+			//@ts-ignore
+			selector.click();
+		  }
+		}
+
+
+
+
+
+>>>>>>> 1480109 (Added favorite folders)
 		let folderSelectors = document.querySelectorAll(".workspace-leaf-content[data-type='file-explorer'] > div > div .tree-item")
     
 

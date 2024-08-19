@@ -34,3 +34,8 @@ If your plugin does not need CSS, delete this file.
     padding-left: 0;
     border-left: none;
   }
+
+  .favorite-folder-select .select-path {
+    opacity: 0.5;
+    font-size: 0.8em;
+  }
