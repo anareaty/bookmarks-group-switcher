@@ -19,10 +19,7 @@ interface MyPluginSettings {
 	linkGroupsToFolders: GroupToFolder[];
 	activeWorkspace: string;
 	workspaceSettings: WorkspaceObject[];
-<<<<<<< HEAD
-=======
 	favoriteFolders: string[];
->>>>>>> 1480109 (Added favorite folders)
 }
 
 
@@ -30,12 +27,8 @@ interface MyPluginSettings {
 const DEFAULT_SETTINGS: MyPluginSettings = {
 	linkGroupsToFolders: [],
 	activeWorkspace: "",
-<<<<<<< HEAD
-	workspaceSettings: []
-=======
 	workspaceSettings: [],
 	favoriteFolders: []
->>>>>>> 1480109 (Added favorite folders)
 }
 
 
@@ -95,15 +88,10 @@ class SelectGroupSuggest extends SuggestModal<string> {
 	this.groupNames = groupNames
 	}
 
-<<<<<<< HEAD
-	getSuggestions(): string[] {
-	  return this.groups
-=======
 	getSuggestions(query: string): string[] {
 	  return this.groups.filter((g) => {
 		return g.toLowerCase().includes(query.toLowerCase())
 	});
->>>>>>> 1480109 (Added favorite folders)
 	}
   
 	renderSuggestion(item: string, el: HTMLElement) {
@@ -124,8 +112,6 @@ class SelectGroupSuggest extends SuggestModal<string> {
 
 
 
-<<<<<<< HEAD
-=======
   class SelectFolderSuggest extends SuggestModal<string> {
 	plugin: MyPlugin;
 
@@ -181,7 +167,6 @@ class SelectGroupSuggest extends SuggestModal<string> {
 
 
 
->>>>>>> 1480109 (Added favorite folders)
 
 
 
@@ -201,17 +186,12 @@ export default class MyPlugin extends Plugin {
 
 
 		this.app.workspace.onLayoutReady(async () => {
-<<<<<<< HEAD
-			await this.loadSavedFocusStates()
-			await this.addBookmarksButtons()
-=======
 			setTimeout(async() => {
 				await this.loadSavedFocusStates();
 			  }, 100)
 
 			await this.addBookmarksButtons()
 			await this.addFavoriteFoldersButton();
->>>>>>> 1480109 (Added favorite folders)
 		})
 
 
@@ -242,9 +222,6 @@ export default class MyPlugin extends Plugin {
 							await this.saveActiveFolder(folderPath)
 						})
 					})  
-<<<<<<< HEAD
-				}          
-=======
 				}
 				
 				
@@ -266,7 +243,6 @@ export default class MyPlugin extends Plugin {
 		  
 				  }
 
->>>>>>> 1480109 (Added favorite folders)
             }
         }))
 
@@ -284,10 +260,7 @@ export default class MyPlugin extends Plugin {
 				this.saveSettings()
 				await this.loadSavedFocusStates()
 				await this.addBookmarksButtons()
-<<<<<<< HEAD
-=======
 				await this.addFavoriteFoldersButton();
->>>>>>> 1480109 (Added favorite folders)
 			}
 		}));
 
@@ -407,8 +380,6 @@ export default class MyPlugin extends Plugin {
 	}
 
 
-<<<<<<< HEAD
-=======
 
 	async addFavoriteFoldersButton() {
 		let leaf = this.app.workspace.getLeavesOfType("file-explorer")[0];
@@ -445,7 +416,6 @@ export default class MyPlugin extends Plugin {
 	}
 
 
->>>>>>> 1480109 (Added favorite folders)
 	async loadSavedFocusStates() {
 		let activeGroup = this.getActiveGroup()
 		let activeFolder = this.getActiveFolder()
@@ -526,8 +496,6 @@ export default class MyPlugin extends Plugin {
 
 	async focusFolder(selectedPath: string) {
 
-<<<<<<< HEAD
-=======
 
 
 		/*Expand closed outer folders*/
@@ -554,7 +522,6 @@ export default class MyPlugin extends Plugin {
 
 
 
->>>>>>> 1480109 (Added favorite folders)
 		let folderSelectors = document.querySelectorAll(".workspace-leaf-content[data-type='file-explorer'] > div > div .tree-item")
     
 
